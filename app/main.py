@@ -12,8 +12,35 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.validation import validar_csv_completo, carregar_csv, gerar_relatorio_divergencias
 from src.ai_handler import gerar_script_correcao
 from src.db_handler import calcular_hash_estrutura, buscar_script_por_hash, salvar_script, registrar_log, ingestar_transacoes
+from src.db_handler import conexao_banco
 
 st.set_page_config(page_title="Validador Financeiro AI", layout="wide")
+
+def carregar_metricas():
+    conn = conexao_banco()
+    total_processado = conn.execute("SELECT SUM(registros_sucesso) FROM log_ingestao").fetchone()[0] or 0
+    total_arquivos = conn.execute("SELECT COUNT(*) FROM log_ingestao").fetchone()[0] or 0
+    scripts_cache = conn.execute("SELECT COUNT(*) FROM scripts_transformacao").fetchone()[0] or 0
+    uso_ia = conn.execute("SELECT COUNT(*) FROM log_ingestao WHERE usou_ia = 1").fetchone()[0] or 0
+    uso_cache = conn.execute("SELECT COUNT(*) FROM log_ingestao WHERE usou_ia = 0").fetchone()[0] or 0
+    conn.close()
+    return total_processado, total_arquivos, scripts_cache, uso_ia, uso_cache
+
+total_proc, total_arq, total_scripts, ia_runs, cache_runs = carregar_metricas()
+
+with st.sidebar:
+    st.header("Métricas do Pipeline")
+    col_a, col_b = st.columns(2)
+    col_a.metric("Arquivos", total_arq)
+    col_b.metric("Transações", total_proc)
+    st.markdown("---")
+    st.subheader("IA vs Cache")
+    st.metric("Scripts em Cache", total_scripts)
+    if total_arq > 0:
+        pct_cache = (cache_runs / total_arq) * 100
+        st.progress(pct_cache / 100, text=f"Eficiência do Cache: {pct_cache:.1f}%")
+        st.caption(f"{cache_runs} via Cache | {ia_runs} via IA")
+    st.info("💡 Cada uso do cache economiza tokens da LLM e reduz o tempo de processamento em ~90%.")
 
 st.title("Pipeline de Ingestão Inteligente")
 st.markdown("Upload -> Validação -> Correção via IA (ou Cache) -> Ingestão")

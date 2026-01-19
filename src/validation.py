@@ -22,13 +22,11 @@ def detectar_delimitador(filepath: Path | str, encoding: str = None) -> str:
 
     if not contagens:
         return ","
-    
     return max(contagens, key=contagens.get)
 
 def carregar_csv(filepath: Path | str) -> tuple[pd.DataFrame, str]:
     encoding = detectar_encoding(filepath)
     delimitador = detectar_delimitador(filepath, encoding)
-    
     try:
         df = pd.read_csv(filepath, encoding=encoding, sep=delimitador, engine='python')
         return df, encoding
@@ -106,7 +104,6 @@ def validar_csv_completo(filepath: Path | str, template: dict) -> dict:
     res_nom = validar_nomes_colunas(df, template)
     if not res_nom["valido"]:
         detalhes.append({"tipo": "nomes_colunas", "mapeamento": res_nom["mapeamento_sugerido"]})
-    
     return {
         "valido": len(detalhes) == 0,
         "total_erros": len(detalhes),
@@ -116,7 +113,6 @@ def validar_csv_completo(filepath: Path | str, template: dict) -> dict:
 def gerar_relatorio_divergencias(filepath: Path | str, template: dict) -> str:
     res = validar_csv_completo(filepath, template)
     if res["valido"]: return "Arquivo válido."
-    
     msg = []
     for erro in res["detalhes"]:
         if erro["tipo"] == "colunas_faltando":
@@ -125,5 +121,4 @@ def gerar_relatorio_divergencias(filepath: Path | str, template: dict) -> str:
             msg.append(f"Colunas com nome errado: {erro['mapeamento']}")
         elif erro["tipo"] == "erro_leitura":
             msg.append(f"Erro fatal de leitura: {erro['mensagem']}")
-            
     return "\n".join(msg)

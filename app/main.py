@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.validation import validar_csv_completo, carregar_csv, gerar_relatorio_divergencias
 from src.ai_handler import gerar_script_correcao
-from src.db_handler import calcular_hash_estrutura, buscar_script_por_hash, salvar_script, registrar_log
+from src.db_handler import calcular_hash_estrutura, buscar_script_por_hash, salvar_script, registrar_log, ingestar_transacoes
 
 st.set_page_config(page_title="Validador Financeiro AI", layout="wide")
 
@@ -54,6 +54,13 @@ if uploaded_file:
         st.subheader("Diagnóstico")
         if resultado["valido"]:
             st.success("Arquivo Perfeito! Pronto para ingestão.")
+            if st.button("💾 Ingestar no Banco de Dados"):
+                try:
+                    ingestar_transacoes(df_raw)
+                    st.success(f"Sucesso! {len(df_raw)} transações salvas no banco.")
+                    st.balloons()
+                except Exception as e:
+                    st.error(f"Erro ao salvar no banco: {e}")
             st.session_state["script_atual"] = ""
         else:
             st.error(f"{resultado['total_erros']} problemas detectados.")
@@ -114,12 +121,13 @@ if uploaded_file:
                         st.dataframe(df_fixed.head())
                         novo_resultado = validar_csv_completo(output_path, template)
                         if novo_resultado["valido"]:
-                            st.success(f"SUCESSO! Validado em {duration:.2f}s.")
-                            st.balloons()
+                            st.success(f"Validado em {duration:.2f}s. Salvando no banco...")
                             if st.session_state["fonte_script"] == "ia":
                                 salvar_script(file_hash, script_editado)
-                                st.toast("Script salvo no cache!")
                             registrar_log(uploaded_file.name, len(df_fixed), len(df_fixed), 0, st.session_state["fonte_script"]=="ia", 1, duration)
+                            ingestar_transacoes(df_fixed)
+                            st.toast("Dados salvos na tabela transacoes_financeiras!", icon="🏦")
+                            st.balloons()
                         else:
                             st.warning(f"O script rodou, mas sobraram {novo_resultado['total_erros']} erros.")
                             st.text(gerar_relatorio_divergencias(output_path, template))

@@ -1,0 +1,41 @@
+# Ambiente Virtual
+venv/
+.venv/
+env/
+
+# Python Cache e Compilados (Lixo)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Variáveis de Ambiente e Segredos (CRÍTICO)
+.env
+.env.local
+
+# Banco de Dados Local
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# VS Code e Configurações de IDE
+.vscode/
+.idea/
+*.swp
+
+# Dados (Para não subir CSVs pesados ou sigilosos)
+*.csv
+*.xlsx
+data/
+sample_data/
+!sample_data/example.csv  # (Opcional: Exceção se quiser subir um exemplo)
+
+# Testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
